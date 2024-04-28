@@ -6,7 +6,7 @@ pipeline {
         echo 'Restoring dependencies...'
         script {
           if (isUnix()) {
-            sh 'export PATH=$PATH:/usr/local/share/dotnet && dotnet restore'
+            sh 'dotnet restore'
           } else {
             bat 'dotnet restore'
           }
@@ -20,7 +20,7 @@ pipeline {
         echo 'Building the project...'
         script {
           if (isUnix()) {
-            sh 'export PATH=$PATH:/usr/local/share/dotnet && dotnet build test.csproj --configuration Release'
+            sh 'dotnet build test.csproj --configuration Release'
           } else {
             bat 'dotnet build test.csproj --configuration Release'
           }
@@ -34,7 +34,7 @@ pipeline {
         echo 'Running tests...'
         script {
           if (isUnix()) {
-            sh 'export PATH=$PATH:/usr/local/share/dotnet && dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
+            sh 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
           } else {
             bat 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
           }
