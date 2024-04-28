@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Define environment variables if needed
-        DOTNET_CORE_SDK_VERSION = '3.1'
+        DOTNET_CORE_SDK_VERSION = '8.0'
     }
 
     stages {
