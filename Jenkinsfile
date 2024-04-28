@@ -1,43 +1,59 @@
 pipeline {
-  agent any
-  stages {
-    stage('Restore') {
-      steps {
-        echo 'Restoring dependencies...'
-        bat 'dotnet restore'
-      }
+    agent any
+    environment {
+        DOTNET_CORE_SDK_VERSION = '8.0'
     }
+    stages {
+        stage('Restore') {
+            steps {
+                echo 'Restoring dependencies...'
+                script {
+                    if (isUnix()) {
+                        sh 'dotnet restore'
+                    } else {
+                        bat 'dotnet restore'
+                    }
+                }
+            }
+        }
 
-    stage('Build') {
-      steps {
-        echo 'Building the project...'
-        bat 'dotnet build test.csproj --configuration Release'
-      }
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+                script {
+                    if (isUnix()) {
+                        sh 'dotnet build test.csproj --configuration Release'
+                    } else {
+                        bat 'dotnet build test.csproj --configuration Release'
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                script {
+                    if (isUnix()) {
+                        sh 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
+                    } else {
+                        bat 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
+                    }
+                }
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                echo 'Publishing test results...'
+                junit '**/test_results.trx'
+            }
+        }
     }
-
-    stage('Test') {
-      steps {
-        echo 'Running tests...'
-        bat 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
-      }
+    post {
+        always {
+            echo 'Cleaning up...'
+            cleanWs()
+        }
     }
-
-    stage('Publish Test Results') {
-      steps {
-        echo 'Publishing test results...'
-        junit '**/test_results.trx'
-      }
-    }
-
-  }
-  environment {
-    DOTNET_CORE_SDK_VERSION = '8.0'
-  }
-  post {
-    always {
-      echo 'Cleaning up...'
-      cleanWs()
-    }
-
-  }
 }
