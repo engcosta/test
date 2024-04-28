@@ -2,6 +2,8 @@ pipeline {
     agent any
     environment {
         DOTNET_CORE_SDK_VERSION = '8.0'
+        // Define the path to the .NET SDK
+        PATH = "${env.PATH}:/usr/local/share/dotnet"
     }
     stages {
         stage('Restore') {
@@ -9,7 +11,7 @@ pipeline {
                 echo 'Restoring dependencies...'
                 script {
                     if (isUnix()) {
-                        sh 'dotnet restore'
+                        sh 'export PATH=$PATH:/usr/local/share/dotnet && dotnet restore'
                     } else {
                         bat 'dotnet restore'
                     }
@@ -22,7 +24,7 @@ pipeline {
                 echo 'Building the project...'
                 script {
                     if (isUnix()) {
-                        sh 'dotnet build test.csproj --configuration Release'
+                        sh 'export PATH=$PATH:/usr/local/share/dotnet && dotnet build test.csproj --configuration Release'
                     } else {
                         bat 'dotnet build test.csproj --configuration Release'
                     }
@@ -35,7 +37,7 @@ pipeline {
                 echo 'Running tests...'
                 script {
                     if (isUnix()) {
-                        sh 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
+                        sh 'export PATH=$PATH:/usr/local/share/dotnet && dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
                     } else {
                         bat 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
                     }
