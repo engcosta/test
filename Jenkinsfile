@@ -1,40 +1,48 @@
 pipeline {
-  agent any
-  stages {
-    stage ('Clean workspace') {
-      steps {
-        cleanWs()
-      }
-    }
-    stage('Restore packages') {
-      steps {
-        bat "dotnet restore ${workspace}\\test.sln"
-      }
-    }
-    stage('Clean') {
-      steps {
-        bat "msbuild.exe ${workspace}\\test.sln" /nologo /nr:false /p:platform=\"x64\" /p:configuration=\"release\" /t:clean"
-      }
-    }
-    stage('Increase version') {
-      steps {
-          echo "${env.BUILD_NUMBER}"
-          powershell '''
-            $xmlFileName = "test\\Package.appxmanifest"
-            [xml]$xmlDoc = Get-Content $xmlFileName
-            $version = $xmlDoc.Package.Identity.Version
-            $trimmedVersion = $version -replace '.[0-9]+$', '.'
-            $xmlDoc.Package.Identity.Version = $trimmedVersion + ${env:BUILD_NUMBER}
-            echo 'New version:' $xmlDoc.Package.Identity.Version
-            $xmlDoc.Save($xmlFileName)
-          '''
-      }
-    }
-  stage('Build') {
-    steps {
-      bat "msbuild.exe ${workspace}\\test.sln /nologo /nr:false  /p:platform=\"x64\" /p:configuration=\"release\" /p:PackageCertificateKeyFile=<path-to-certificate-file>.pfx /t:clean;restore;rebuild"
-    }
-  }
+    agent any
 
-  }
+    environment {
+        // Define environment variables if needed
+        DOTNET_CORE_SDK_VERSION = '3.1'
+    }
+
+    stages {
+        stage('Restore') {
+            steps {
+                echo 'Restoring dependencies...'
+                bat 'dotnet restore'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+                // Replace 'test' with your project's name
+                bat 'dotnet build test.csproj --configuration Release'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                bat 'dotnet test test.csproj --configuration Release --logger "trx;LogFileName=test_results.trx"'
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                echo 'Publishing test results...'
+                junit '**/test_results.trx'
+            }
+        }
+
+        // Add additional stages for deployment if necessary
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            cleanWs() // Cleans up the workspace
+        }
+    }
 }
